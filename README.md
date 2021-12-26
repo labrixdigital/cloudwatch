@@ -51,7 +51,7 @@ logger.warning("Watch out! Something happened!")
 
 ## Specifying credentials and region
 
-If you dont add credentials when creating the handler, it uses the default AWS credentials that you set-up on the CLI, or that you passed on the invokation (if using on EC2, Lambda, ECS). However, you can also specify the credentials like this:
+If you dont add credentials when creating the handler, it uses the default AWS credentials that you set-up on the CLI, or that you passed on the invokation (if using on EC2, Lambda, ECS), this is in line with the boto3 configuration [Expained here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html). However, you can also specify the credentials like this:
 
 ```python
 handler = cloudwatch.CloudwatchHandler(
@@ -87,3 +87,15 @@ handler = cloudwatch.CloudwatchHandler(
  'LOG_STREAM'
 )
 ```
+
+# Parameters
+
+|Positional order|Keyword argument|Required|Default|Description|
+|---|---|---|---|---|
+|0|`access_id`|No|Taken from the AWS Configuration File or Role|The AWS Access Key ID that you want to use to interact with your AWS Account. Usually a 20 character alphanumeric.|
+|1|`access_key`|No|Taken from the AWS Configuration File or Role|The corresponding AWS Secret to the above parameter|
+|2|`region`|No|Taken from the AWS Configuration File or Role|The AWS Region name (e.g. `us-east-1`)|
+|3|`log_group`|Yes||The name of the log group. If it already exists, it writes to it, otherwise it creates it.|
+|4|`log_stream`|No|Datetime in the format `%Y%m%d%H%M%S%f` and 3 random digits|The name of the log stream. If it already exists, it writes to it, otherwise it creates it.|
+
+
