@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='cloudwatch',
-    version='1.0.1',
+    version='1.0.5',
     description='A small handler for AWS Cloudwatch',
     long_description=long_description,
     long_description_content_type="text/markdown",
