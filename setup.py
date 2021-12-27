@@ -13,7 +13,7 @@ setup(
     url='https://github.com/labrixdigital/cloudwatch',
     author='Ernesto Monroy',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Utilities',
         'License :: OSI Approved :: MIT License',
