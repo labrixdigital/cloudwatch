@@ -1,5 +1,8 @@
 import logging
 
+CW_EVENT_OVERHEAD_BYTES = 26
+CW_EVENT_MAX_MSG_BYTES = 256 * 1024 - CW_EVENT_OVERHEAD_BYTES
+
 class CloudwatchHandler(logging.Handler):
   """
   This is a lightweight Handler for Python's standard logging to send logs 
@@ -19,7 +22,8 @@ class CloudwatchHandler(logging.Handler):
     access_key = None, 
     region = None, 
     log_group = None, 
-    log_stream = None
+    log_stream = None,
+    truncate_message = '.. [TRUNCATED]'
   ):
     #First validate and populate defaults
     if not log_group:
@@ -35,6 +39,7 @@ class CloudwatchHandler(logging.Handler):
     self.log_group = log_group
     self.log_stream = log_stream
     self.next_sequence_token = None
+    self.truncate_message = truncate_message
 
     #If there is no keys specified use a default session
     if not access_id and not region:
@@ -95,7 +100,12 @@ class CloudwatchHandler(logging.Handler):
     
     #Format the message (using Formatter of the logging)
     log_entry = self.format(record)
-  
+
+    #Check for event overflow and truncate (could otherwise add code to split in multiple events, if desired)
+    log_entry_overflow_qty = len(log_entry.encode('utf-8')) - CW_EVENT_MAX_MSG_BYTES
+    if log_entry_overflow_qty > 0:
+      log_entry = log_entry[:-log_entry_overflow_qty - len(self.truncate_message)] + self.truncate_message
+
     try:
       self.send_log(timestamp, log_entry)
 
