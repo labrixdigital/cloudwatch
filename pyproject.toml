@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudwatch"
+authors = [
+    {name = "Ernesto Monroy"},
+]
+version = "1.1.1"
+description = "A small handler for AWS Cloudwatch"
+readme = "README.md"
+requires-python = ">=3.5"
+keywords = ["cloudwatch", "aws", "boto3", "logging", "logger"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Utilities"
+]
+dependencies = ["boto3"]
+
+[project.urls]
+"Homepage" = "https://github.com/labrixdigital/cloudwatch"
+"Bug Tracker" = "https://github.com/labrixdigital/cloudwatch/issues"
