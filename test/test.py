@@ -16,9 +16,7 @@ logger.addHandler(handler)
 
 # 1 - TESTS
 # 1.1 Small
-with open('test/message_256.txt', 'r') as f:
- message = f.read()
-logger.warning(message)
+logger.warning('Hello World')
 
 # 1.2 Large, but not overflowing
 with open('test/message_256.txt', 'r') as f:
