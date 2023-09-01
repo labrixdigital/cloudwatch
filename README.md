@@ -1,13 +1,13 @@
 # AWS Cloudwatch Lightweight Handler
 
-This small log handler is designed to send events to AWS Cloudwatch. It is useful when operating infrastructure outside of the AWS Serverless Infrastructure (e.g. Lambdas or ECS). You can still integrate it in your Serverless Infrastructure, but you might find it easier to just let AWS Handle the logs in this cases.
+This small log handler is designed to send events to AWS Cloudwatch. It is useful when operating infrastructure outside of the AWS, when AWS does not log automatically (EC2) or when you want to separate logs. If you are logging on Serverless Infrastructure (e.g. Lambdas or ECS) you might find it easier to just let AWS Handle the logs automatically.
 
-We originally developed this to be used on dedicated servers (on and off EC2) and chose to create something new because we wanted:
+We originally developed this to be used on dedicated servers (on and off EC2) and chose to create something new because we wanted to:
 
-* Provide your own AWS programmatic access credentials
-* Lightweight (only the handler is included and you need only one file)
+* Be able to provide your own AWS programmatic access credentials
+* Have a lightweight solution (only the handler is included and you need only one file)
 
-If you already have a codebase that is using python's logger, you only need minor modifications to send your logs to AWS. In fact, you only need to change code at the logger creation. If you havent done any logging before, I recommend you look at a basic tutorial on python's logging module. There are plenty of resources out there.
+If you already have a codebase that is using python's logger, you only need minor modifications to send your logs to AWS. In fact, you only need to change code at the logger creation. If you haven't done any logging before, I recommend you look at a basic tutorial on python's logging module. There are plenty of resources out there.
 
 # Installing it
 
@@ -20,7 +20,7 @@ pip install cloudwatch
 Or if you prefer to customise and (hopefully) feedback on improvements and bugs
 
 ```bash
-git clone https://github.com/ernestomonroy/cloudwatch
+git clone https://github.com/labrixdigital/cloudwatch
 ```
 
 # Usage
@@ -49,6 +49,8 @@ logger.addHandler(handler)
 logger.warning("Watch out! Something happened!")
 ```
 
+# Credentials
+
 ## Specifying credentials and region
 
 If you dont add credentials when creating the handler, it uses the default AWS credentials that you set-up on the CLI, or that you passed on the invokation (if using on EC2, Lambda, ECS), this is in line with the boto3 configuration [Expained here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html). However, you can also specify the credentials like this:
@@ -74,17 +76,27 @@ handler = cloudwatch.CloudwatchHandler(
 )
 ```
 
-## Legacy
+# Overflow
 
-We much prefer keyword arguments, and encourage you to use them. However, if you really want to avoid some typing, the order of the positional arguments work as follows:
+AWS CloudWatch Logs takes a maximum event size of 256 KB ([reference](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutLogEvents.html)). This means that large messages can result in an error if not handled correctly. We have included 3 options in the parameters:
+* __error__: This is the default, and will simply raise a value exception
+* __truncate__: This will truncate the original message to the maximum possible size and log it
+* __split__: This will divide the original message into multiple parts of the maximum size and send them separately
+
+One caveat is that because the truncate and split options are based on bytes and not characters (because its size limited), its possible that non-ASCII characters will end up being split or truncated.
 
 ```python
+#Specify truncate
 handler = cloudwatch.CloudwatchHandler(
- 'AWS_ACCESS_KEY_ID',
- 'AWS_SECRET_ACCESS_KEY',
- 'REGION',
- 'LOG_GROUP',
- 'LOG_STREAM'
+ log_group = 'my_log_group',
+ overflow = 'truncate'
+)
+
+#Specify split
+```python
+handler = cloudwatch.CloudwatchHandler(
+ log_group = 'my_log_group',
+ overflow = 'split'
 )
 ```
 
@@ -97,5 +109,21 @@ handler = cloudwatch.CloudwatchHandler(
 |2|`region`|No|Taken from the AWS Configuration File or Role|The AWS Region name (e.g. `us-east-1`)|
 |3|`log_group`|Yes||The name of the log group. If it already exists, it writes to it, otherwise it creates it.|
 |4|`log_stream`|No|Datetime in the format `%Y%m%d%H%M%S%f` and 3 random digits|The name of the log stream. If it already exists, it writes to it, otherwise it creates it.|
+|5|`overflow`|No|Defines the behaviour when a message is too large to send in one API call. Either `'error'`, `'truncate'` or `'split'`. Default is `'error'`|
+
+# Legacy initialisation
+
+We much prefer keyword arguments, and encourage you to use them. However, if you really want to avoid some typing, the order of the positional arguments work as follows:
+
+```python
+handler = cloudwatch.CloudwatchHandler(
+ 'AWS_ACCESS_KEY_ID',
+ 'AWS_SECRET_ACCESS_KEY',
+ 'REGION',
+ 'LOG_GROUP',
+ 'LOG_STREAM',
+ 'OVERFLOW'
+)
+```
 
 
