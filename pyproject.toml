@@ -7,7 +7,7 @@ name = "cloudwatch"
 authors = [
     {name = "Ernesto Monroy"},
 ]
-version = "1.2.0"
+version = "1.2.1"
 description = "A small handler for AWS Cloudwatch"
 readme = "README.md"
 requires-python = ">=3.5"
