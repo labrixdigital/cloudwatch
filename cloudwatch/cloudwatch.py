@@ -1,7 +1,7 @@
 import logging
 
-CW_EVENT_OVERHEAD_BYTES = 26
-CW_EVENT_MAX_MSG_BYTES = 256 * 1024 - CW_EVENT_OVERHEAD_BYTES
+#SET THE max message size (- 26 for overhead)
+MAX_MESSAGE_BYTES = 256 * 1024 - 26
 
 class CloudwatchHandler(logging.Handler):
   """
@@ -23,7 +23,7 @@ class CloudwatchHandler(logging.Handler):
     region = None, 
     log_group = None, 
     log_stream = None,
-    truncate_message = '.. [TRUNCATED]'
+    overflow = None
   ):
     #First validate and populate defaults
     if not log_group:
@@ -35,11 +35,17 @@ class CloudwatchHandler(logging.Handler):
         datetime.strftime(datetime.now(),"%Y%m%d%H%M%S%f"),
         randrange(100)
       )
+    #Set default message overflow behaviour
+    if not overflow:
+      overflow = 'error'
+    #If specified, check its valid
+    elif overflow not in ['error', 'truncate', 'split']:
+     raise ValueError('Invalid overflow parameter, please use valid options: "error", "truncate" or "split"')
     #Set them in self
     self.log_group = log_group
     self.log_stream = log_stream
     self.next_sequence_token = None
-    self.truncate_message = truncate_message
+    self.overflow = overflow
 
     #If there is no keys specified use a default session
     if not access_id and not region:
@@ -94,18 +100,32 @@ class CloudwatchHandler(logging.Handler):
 
   def emit(self, record):
     """This is the overriden function from the handler to send logs to AWS
-    """
-    #Get current time in MS (required by AWS)
-    timestamp = round(self.time.time() * 1000)
-    
+    """    
     #Format the message (using Formatter of the logging)
     log_entry = self.format(record)
 
     #Check for event overflow and truncate (could otherwise add code to split in multiple events, if desired)
-    log_entry_overflow_qty = len(log_entry.encode('utf-8')) - CW_EVENT_MAX_MSG_BYTES
-    if log_entry_overflow_qty > 0:
-      log_entry = log_entry[:-log_entry_overflow_qty - len(self.truncate_message)] + self.truncate_message
+    current_overflow = len(log_entry.encode('utf-8')) - MAX_MESSAGE_BYTES
+    #If there is overflow check the behaviour
+    if current_overflow > 0:
+      if self.overflow == 'error':
+        raise ValueError('Overflow: Message too large to handle in one API call. Please specify overflow behaviour to avoid this error, or reduce message size')
+      elif self.overflow == 'truncate':
+       #Truncate to MAX_MESSAGE_BYTES
+       log_entry = log_entry.encode('utf-8')[:MAX_MESSAGE_BYTES].decode('utf-8', 'ignore')
+       self._send(log_entry)
+      elif self.overflow == 'split':
+       i = 0
+       while log_entry[i*MAX_MESSAGE_BYTES:(i+1)*MAX_MESSAGE_BYTES] != '':
+          self._send(log_entry[i*MAX_MESSAGE_BYTES:(i+1)*MAX_MESSAGE_BYTES])
+          i += 1
+      else:
+        raise KeyError('Unhandled overflow option')
 
+  def _send(self, log_entry):
+    #Get current time in MS (required by AWS)
+    timestamp = round(self.time.time() * 1000)
+    
     try:
       self.send_log(timestamp, log_entry)
 
