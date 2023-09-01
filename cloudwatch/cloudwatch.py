@@ -106,8 +106,11 @@ class CloudwatchHandler(logging.Handler):
 
     #Check for event overflow and truncate (could otherwise add code to split in multiple events, if desired)
     current_overflow = len(log_entry.encode('utf-8')) - MAX_MESSAGE_BYTES
+    #If no overflow, log it
+    if current_overflow <= 0:
+     self._send(log_entry)
     #If there is overflow check the behaviour
-    if current_overflow > 0:
+    else:
       if self.overflow == 'error':
         raise ValueError('Overflow: Message too large to handle in one API call. Please specify overflow behaviour to avoid this error, or reduce message size')
       elif self.overflow == 'truncate':
