@@ -84,11 +84,13 @@ class CloudwatchHandler(logging.Handler):
     logging.Handler.__init__(self)
 
   def send_log(self, timestamp, log_entry):
-    #Send the message to AWS (function depends if there is a token or not)
+    #Send the message to AWS
     self.logs.put_log_events(logGroupName=self.log_group,
         logStreamName=self.log_stream,
+        sequenceToken="", # ignored by PutLogEvents
         logEvents=[{'timestamp': timestamp,'message': log_entry}])
-
+    
+    
   def emit(self, record):
     """This is the overriden function from the handler to send logs to AWS
     """    
